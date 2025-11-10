@@ -14,25 +14,19 @@ const (
 	MAX_MESSAGE_SIZE = 64
 )
 
-func main() {
-	// 1. Se inicia el oyente
-	listener, err := net.Listen(CONN_TYPE, CONN_HOST+":"+CONN_PORT)
+func createConnection(host, port, connType string) net.Listener {
+	listener, err := net.Listen(connType, host+":"+port)
 	if err != nil {
 		fmt.Println("Error al iniciar el listener:", err.Error())
 		os.Exit(1)
 	}
 	fmt.Printf("Servidor escuchando en %s:%s...\n", CONN_HOST, CONN_PORT)
-	defer listener.Close()
+	return listener
+}
 
-	// 2. Aqui llega la conexión que envia el cliente
-	conn, err := listener.Accept()
-	if err != nil {
-		fmt.Println("Error al aceptar conexión:", err.Error())
-		return
-	}
-
-	// esta conexión se mantiene con el cliente en todas las requests
-	fmt.Println("Conexión persistente establecida. Iniciando bucle de latencia.")
+func handleRequest(conn net.Conn) {
+	remoteAddr := conn.RemoteAddr()
+	fmt.Printf("Conexión persistente establecida con: %s\n", remoteAddr)
 	defer conn.Close()
 
 	// 3. Bucle de Latencia Mínima (Read-Write Loop)
@@ -41,7 +35,7 @@ func main() {
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
-			fmt.Println("Conexión cerrada por el cliente. Terminando servidor.")
+			fmt.Printf("Conexión cerrada con %s\n", remoteAddr)
 			return
 		}
 
@@ -55,5 +49,22 @@ func main() {
 			receivedMessage := string(buffer[:n])
 			fmt.Printf("Estímulo recibido: %s\n", receivedMessage)
 		}
+	}
+}
+
+func main() {
+	// 1. Se inicia el oyente
+	listener := createConnection(CONN_HOST, CONN_PORT, CONN_TYPE)
+	defer listener.Close()
+
+	// 2. Aqui llega la conexión que envia el cliente
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error al aceptar conexión:", err.Error())
+		}
+
+		// ahora tenemos un manejo de multiples clientes de ser requerido.
+		go handleRequest(conn)
 	}
 }
