@@ -19,6 +19,17 @@ const (
 	LOG_FILE     = "latency_log.txt"
 )
 
+func createConnection(host, port, connType string) net.Conn {
+	addr := host + ":" + port
+	conn, err := net.Dial(connType, addr)
+	if err != nil {
+		fmt.Println("Error al conectar con el servidor en", addr, ":", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Conexión establecida con", addr)
+	return conn
+}
+
 func main() {
 	// 1. se abre el archivo para guardar los resultados
 	logFile, err := os.Create(LOG_FILE)
@@ -32,14 +43,8 @@ func main() {
 	logFile.WriteString("Iteración | Latencia (ms) | Resultado\n")
 
 	// 2. Se conecta al servidor
-	addr := CONN_HOST + ":" + CONN_PORT
-	conn, err := net.Dial(CONN_TYPE, addr)
-	if err != nil {
-		fmt.Println("Error al conectar con el servidor en", addr, ":", err.Error())
-		os.Exit(1)
-	}
+	conn := createConnection(CONN_HOST, CONN_PORT, CONN_TYPE)
 	defer conn.Close()
-	fmt.Println("Conexión establecida con", addr)
 
 	var totalLatency time.Duration
 	buffer := make([]byte, MAX_MESSAGE_SIZE)

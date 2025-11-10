@@ -1,13 +1,13 @@
---- Inicio de prueba: 2025-11-09T20:35:38-05:00 ---
+--- Inicio de prueba: 2025-11-09T21:07:33-05:00 ---
 Iteración | Latencia (ms) | Resultado
-1         | 0.087         | OK
-2         | 0.081         | OK
-3         | 0.121         | OK
-4         | 0.032         | OK
-5         | 0.024         | OK
-6         | 0.024         | OK
-7         | 0.023         | OK
-8         | 0.025         | OK
-9         | 0.027         | OK
-10        | 0.027         | OK
---- Latencia Promedio: 0.047 ms ---
+1         | 0.117         | OK
+2         | 0.079         | OK
+3         | 0.077         | OK
+4         | 0.098         | OK
+5         | 0.062         | OK
+6         | 0.030         | OK
+7         | 0.032         | OK
+8         | 0.028         | OK
+9         | 0.031         | OK
+10        | 0.028         | OK
+--- Latencia Promedio: 0.058 ms ---
