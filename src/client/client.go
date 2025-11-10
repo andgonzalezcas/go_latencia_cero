@@ -15,8 +15,9 @@ const (
 	MESSAGE          = "ping"
 	MAX_MESSAGE_SIZE = 64
 
-	NUM_REQUESTS = 10
-	LOG_FILE     = "latency_log.txt"
+	NUM_REQUESTS  = 10
+	LOG_FILE      = "latency_log_"
+	LOG_EXTENSION = ".txt"
 )
 
 func createConnection(host, port, connType string) net.Conn {
@@ -30,8 +31,8 @@ func createConnection(host, port, connType string) net.Conn {
 	return conn
 }
 
-func createFileConnection(file string, init_time string) *os.File {
-	logFile, err := os.Create(file + init_time)
+func createFileConnection(file string, extension string, init_time string) *os.File {
+	logFile, err := os.Create(file + init_time + extension)
 	if err != nil {
 		fmt.Println("Error al crear el archivo de log:", err)
 		os.Exit(1)
@@ -45,7 +46,7 @@ func runLatencyTest(conn net.Conn, numRequests int, logFile *os.File) time.Durat
 	var totalLatency time.Duration
 	buffer := make([]byte, MAX_MESSAGE_SIZE)
 
-	for i := 1; i <= NUM_REQUESTS; i++ {
+	for i := 1; i <= numRequests; i++ {
 		messageBytes := fmt.Appendf(nil, "%s %d", MESSAGE, i)
 		start := time.Now()
 
@@ -87,12 +88,12 @@ func createFinalReport(logFile *os.File, totalLatency time.Duration) {
 	fmt.Printf("Latencia Promedio: %.3f ms\n", avgLatencyMs)
 
 	fmt.Fprintf(logFile, "--- Latencia Promedio: %.3f ms ---\n", avgLatencyMs)
-	fmt.Printf("Revisa el archivo '%s' para ver los resultados.\n", LOG_FILE)
+	fmt.Printf("Revisa el archivo '%s' para ver los resultados.\n", logFile.Name())
 }
 
 func main() {
 	// 1. se abre el archivo para guardar los resultados
-	logFile := createFileConnection(LOG_FILE, time.Now().Format(time.RFC3339))
+	logFile := createFileConnection(LOG_FILE, LOG_EXTENSION, time.Now().Format(time.RFC3339))
 	logFile.WriteString("Iteración | Latencia (ms) | Resultado\n")
 	defer logFile.Close()
 
