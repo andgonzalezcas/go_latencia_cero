@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"time"
@@ -19,6 +20,12 @@ const (
 	LOG_FILE      = "latency_log_"
 	LOG_EXTENSION = ".txt"
 )
+
+type LatencyResult struct {
+	total time.Duration
+	min   time.Duration
+	max   time.Duration
+}
 
 func createConnection(host, port, connType string) net.Conn {
 	addr := host + ":" + port
@@ -42,8 +49,12 @@ func createFileConnection(file string, extension string, init_time string) *os.F
 	return logFile
 }
 
-func runLatencyTest(conn net.Conn, numRequests int, logFile *os.File) time.Duration {
-	var totalLatency time.Duration
+func runLatencyTest(conn net.Conn, numRequests int, logFile *os.File) LatencyResult {
+	result := LatencyResult{
+		total: 0,
+		min:   time.Duration(math.MaxInt64),
+		max:   0,
+	}
 	buffer := make([]byte, MAX_MESSAGE_SIZE)
 
 	for i := 1; i <= numRequests; i++ {
@@ -64,7 +75,15 @@ func runLatencyTest(conn net.Conn, numRequests int, logFile *os.File) time.Durat
 
 		end := time.Now()
 		latency := end.Sub(start) // end - start = tiempo de latencia
-		totalLatency += latency
+		if latency < result.min {
+			result.min = latency
+		}
+
+		if latency > result.max {
+			result.max = latency
+		}
+
+		result.total += latency
 
 		status := "OK"
 		latencyMs := float64(latency.Microseconds()) / 1000.0
@@ -75,19 +94,25 @@ func runLatencyTest(conn net.Conn, numRequests int, logFile *os.File) time.Durat
 		}
 	}
 
-	return totalLatency
+	return result
 }
 
-func createFinalReport(logFile *os.File, totalLatency time.Duration) {
-	avgLatency := totalLatency / time.Duration(NUM_REQUESTS)
+func createFinalReport(logFile *os.File, result LatencyResult) {
+	avgLatency := result.total / time.Duration(NUM_REQUESTS)
 	avgLatencyMs := float64(avgLatency.Microseconds()) / 1000.0
+	minLatencyMs := float64(result.min.Microseconds()) / 1000.0
+	maxLatencyMs := float64(result.max.Microseconds()) / 1000.0
 
 	// Reporte final
 	fmt.Println("\n--- PRUEBA FINALIZADA ---")
 	fmt.Printf("Total de peticiones: %d\n", NUM_REQUESTS)
 	fmt.Printf("Latencia Promedio: %.3f ms\n", avgLatencyMs)
+	fmt.Printf("Latencia Mínima: %.3f ms\n", minLatencyMs)
+	fmt.Printf("Latencia Maxima: %.3f ms\n", maxLatencyMs)
 
 	fmt.Fprintf(logFile, "--- Latencia Promedio: %.3f ms ---\n", avgLatencyMs)
+	fmt.Fprintf(logFile, "--- Latencia Mínima: %.3f ms ---\n", minLatencyMs)
+	fmt.Fprintf(logFile, "--- Latencia Maxima: %.3f ms ---\n", maxLatencyMs)
 	fmt.Printf("Revisa el archivo '%s' para ver los resultados.\n", logFile.Name())
 }
 
@@ -102,8 +127,8 @@ func main() {
 	defer conn.Close()
 
 	// 3. Bucle de prueba de latencia
-	totalLatency := runLatencyTest(conn, NUM_REQUESTS, logFile)
+	result := runLatencyTest(conn, NUM_REQUESTS, logFile)
 
 	// 4. Cálculo de latencia promedio
-	createFinalReport(logFile, totalLatency)
+	createFinalReport(logFile, result)
 }
